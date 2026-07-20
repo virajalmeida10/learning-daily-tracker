@@ -11,10 +11,11 @@ interface Props {
   onComplete: () => void
   onStruggled: () => void
   onToggleSubtopic: (subtopicId: string) => void
+  onToggleSubtopicChild: (subtopicId: string, childId: string) => void
   onBack: () => void
 }
 
-export function TopicDetail({ topic, subject, onEdit, onDelete, onComplete, onStruggled, onToggleSubtopic, onBack }: Props) {
+export function TopicDetail({ topic, subject, onEdit, onDelete, onComplete, onStruggled, onToggleSubtopic, onToggleSubtopicChild, onBack }: Props) {
   const status = getDueStatus(topic.revision.dueDate)
   const doneCount = topic.subtopics.filter((s) => s.completed).length
 
@@ -56,11 +57,33 @@ export function TopicDetail({ topic, subject, onEdit, onDelete, onComplete, onSt
               {doneCount}/{topic.subtopics.length} done
             </p>
           </div>
-          <ul className="space-y-1">
+          <ul className="space-y-2">
             {topic.subtopics.map((s) => (
-              <li key={s.id} className="flex items-center gap-2">
-                <input type="checkbox" checked={s.completed} onChange={() => onToggleSubtopic(s.id)} className="h-4 w-4 accent-accent-600" />
-                <span className={`text-sm ${s.completed ? 'text-stone-400 line-through' : 'text-stone-800'}`}>{s.text}</span>
+              <li key={s.id}>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" checked={s.completed} onChange={() => onToggleSubtopic(s.id)} className="h-4 w-4 accent-accent-600" />
+                  <span className={`flex-1 text-sm font-medium ${s.completed ? 'text-stone-400 line-through' : 'text-stone-800'}`}>{s.text}</span>
+                  {s.children && s.children.length > 0 && (
+                    <span className="text-xs text-stone-400">
+                      {s.children.filter((c) => c.completed).length}/{s.children.length}
+                    </span>
+                  )}
+                </div>
+                {s.children && s.children.length > 0 && (
+                  <ul className="ml-6 mt-1 space-y-1 border-l border-stone-200 pl-3">
+                    {s.children.map((c) => (
+                      <li key={c.id} className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={c.completed}
+                          onChange={() => onToggleSubtopicChild(s.id, c.id)}
+                          className="h-3.5 w-3.5 accent-accent-600"
+                        />
+                        <span className={`text-xs ${c.completed ? 'text-stone-400 line-through' : 'text-stone-600'}`}>{c.text}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             ))}
           </ul>

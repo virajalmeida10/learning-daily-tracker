@@ -43,6 +43,9 @@ export default function App() {
     setSelectedTopicId(topic.id)
   }
 
+  // Toggling a subtopic with children cascades the new state down to all of
+  // them; toggling a child recomputes its parent from whether every
+  // sibling is now done, so the two levels never drift out of sync.
   const toggleSubtopic = (topicId: string, subtopicId: string) => {
     setData((d) => ({
       ...d,
@@ -50,7 +53,31 @@ export default function App() {
         t.id === topicId
           ? {
               ...t,
-              subtopics: t.subtopics.map((s) => (s.id === subtopicId ? { ...s, completed: !s.completed } : s)),
+              subtopics: t.subtopics.map((s) => {
+                if (s.id !== subtopicId) return s
+                const completed = !s.completed
+                const children = s.children && s.children.length > 0 ? s.children.map((c) => ({ ...c, completed })) : s.children
+                return { ...s, completed, children }
+              }),
+              updatedAt: new Date().toISOString(),
+            }
+          : t,
+      ),
+    }))
+  }
+
+  const toggleSubtopicChild = (topicId: string, subtopicId: string, childId: string) => {
+    setData((d) => ({
+      ...d,
+      topics: d.topics.map((t) =>
+        t.id === topicId
+          ? {
+              ...t,
+              subtopics: t.subtopics.map((s) => {
+                if (s.id !== subtopicId || !s.children) return s
+                const children = s.children.map((c) => (c.id === childId ? { ...c, completed: !c.completed } : c))
+                return { ...s, children, completed: children.every((c) => c.completed) }
+              }),
               updatedAt: new Date().toISOString(),
             }
           : t,
@@ -119,6 +146,7 @@ export default function App() {
         onComplete={() => reviseTopic(selectedTopic.id, 'completed')}
         onStruggled={() => reviseTopic(selectedTopic.id, 'struggled')}
         onToggleSubtopic={(subtopicId) => toggleSubtopic(selectedTopic.id, subtopicId)}
+        onToggleSubtopicChild={(subtopicId, childId) => toggleSubtopicChild(selectedTopic.id, subtopicId, childId)}
         onBack={() => {
           closeTopic()
           setView(detailOrigin === 'home' ? 'home' : detailOrigin)
@@ -181,7 +209,7 @@ export default function App() {
       )
     }
   } else if (view === 'checklist') {
-    body = <Checklist topics={data.topics} subjects={data.subjects} onToggleSubtopic={toggleSubtopic} />
+    body = <Checklist topics={data.topics} subjects={data.subjects} onToggleSubtopic={toggleSubtopic} onToggleSubtopicChild={toggleSubtopicChild} />
   } else if (view === 'goals') {
     body = <DailyGoals goals={data.dailyGoals} subjects={data.subjects} onAdd={addGoal} onToggle={toggleGoal} onDelete={deleteGoal} />
   } else {

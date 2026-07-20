@@ -20,10 +20,21 @@ export interface RevisionState {
   history: RevisionHistoryEntry[]
 }
 
+export interface SubtopicChild {
+  id: string
+  text: string
+  completed: boolean
+}
+
 export interface Subtopic {
   id: string
   text: string
   completed: boolean
+  // Optional finer-grained checklist items under this subtopic. When
+  // present, toggling the subtopic cascades to all children, and toggling
+  // a child recomputes the subtopic's own completed state from whether
+  // every child is done.
+  children?: SubtopicChild[]
 }
 
 export interface Topic {

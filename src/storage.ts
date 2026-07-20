@@ -1,7 +1,14 @@
 import type { AppData, ExportData, Topic } from './types'
 import { todayISO } from './date'
 import { createInitialRevisionState } from './spacedRepetition'
-import { HLD_PREREQUISITES, LLD_PREREQUISITES, prereqNotes, prereqSubtopicTexts } from './prerequisiteContent'
+import {
+  HLD_PREREQUISITES,
+  HLD_PREREQUISITES_TOPIC_NAME,
+  LLD_PREREQUISITES,
+  LLD_PREREQUISITES_TOPIC_NAME,
+  prereqNotes,
+  prereqSubtopicSeeds,
+} from './prerequisiteContent'
 
 const STORAGE_KEY = 'learning-tracker:data:v1'
 const PREREQ_SEED_KEY = 'learning-tracker:seeded-prereqs:v1'
@@ -70,15 +77,21 @@ function migrateSubtopics(data: AppData): AppData {
   return changed ? { ...data, topics } : data
 }
 
-function makePrereqTopic(subjectId: string, name: string, tags: string[]): Topic {
-  const sections = name === 'LLD Prerequisites' ? LLD_PREREQUISITES : HLD_PREREQUISITES
+function makePrereqTopic(subjectId: string, kind: 'lld' | 'hld', tags: string[]): Topic {
+  const sections = kind === 'lld' ? LLD_PREREQUISITES : HLD_PREREQUISITES
+  const name = kind === 'lld' ? LLD_PREREQUISITES_TOPIC_NAME : HLD_PREREQUISITES_TOPIC_NAME
   const now = new Date().toISOString()
   const dateLearned = todayISO()
   return {
     id: newId(),
     subjectId,
     name,
-    subtopics: prereqSubtopicTexts(sections).map((text) => ({ id: newId(), text, completed: false })),
+    subtopics: prereqSubtopicSeeds(sections).map((s) => ({
+      id: newId(),
+      text: s.heading,
+      completed: false,
+      children: s.items.map((text) => ({ id: newId(), text, completed: false })),
+    })),
     notes: prereqNotes(sections),
     dateLearned,
     difficulty: 3,
@@ -105,15 +118,45 @@ function seedPrerequisiteTopics(data: AppData): AppData {
   }
 
   const newTopics = [
-    makePrereqTopic(systemDesign.id, 'LLD Prerequisites', ['prerequisites', 'lld']),
-    makePrereqTopic(systemDesign.id, 'HLD Prerequisites', ['prerequisites', 'hld']),
+    makePrereqTopic(systemDesign.id, 'lld', ['prerequisites', 'lld']),
+    makePrereqTopic(systemDesign.id, 'hld', ['prerequisites', 'hld']),
   ]
 
   return { ...data, subjects, topics: [...data.topics, ...newTopics] }
 }
 
+// Upgrades prerequisite topics seeded by an earlier version of this app:
+// renames them to include the "Learn By Code Implementation" / "Mostly
+// Conceptual" suffix, and backfills checkable child items under each
+// subtopic heading (a child's initial completed state mirrors whatever
+// its parent subtopic was already marked as, so nothing looks like it
+// regressed). Matches on the old exact name, so it naturally becomes a
+// no-op once a topic has been renamed — and leaves alone anything the
+// user has since renamed themselves.
+function migratePrereqTopics(data: AppData): AppData {
+  let changed = false
+  const topics = data.topics.map((t) => {
+    const kind = t.name.trim() === 'LLD Prerequisites' ? 'lld' : t.name.trim() === 'HLD Prerequisites' ? 'hld' : null
+    if (!kind) return t
+    changed = true
+    const sections = kind === 'lld' ? LLD_PREREQUISITES : HLD_PREREQUISITES
+    const seedByHeading = new Map(prereqSubtopicSeeds(sections).map((s) => [s.heading, s.items]))
+    return {
+      ...t,
+      name: kind === 'lld' ? LLD_PREREQUISITES_TOPIC_NAME : HLD_PREREQUISITES_TOPIC_NAME,
+      subtopics: t.subtopics.map((sub) => {
+        if (sub.children && sub.children.length > 0) return sub
+        const items = seedByHeading.get(sub.text)
+        if (!items) return sub
+        return { ...sub, children: items.map((text) => ({ id: newId(), text, completed: sub.completed })) }
+      }),
+    }
+  })
+  return changed ? { ...data, topics } : data
+}
+
 export function migrateData(data: AppData): AppData {
-  return seedPrerequisiteTopics(migrateSubtopics(migrateSeedSubjects(data)))
+  return seedPrerequisiteTopics(migratePrereqTopics(migrateSubtopics(migrateSeedSubjects(data))))
 }
 
 export function loadData(): AppData {

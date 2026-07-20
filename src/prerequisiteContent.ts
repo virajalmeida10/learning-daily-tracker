@@ -410,3 +410,19 @@ export function prereqNotes(sections: PrereqSection[]): string {
 export function prereqSubtopicTexts(sections: PrereqSection[]): string[] {
   return sections.map((s) => s.heading)
 }
+
+// Flattened { heading, items } per section, for building the checkable
+// child items under each subtopic. Grouped sections (Design Patterns) get
+// their group label prefixed onto each item so the grouping isn't lost
+// without needing a third checklist level.
+export function prereqSubtopicSeeds(sections: PrereqSection[]): { heading: string; items: string[] }[] {
+  return sections.map((s) => ({
+    heading: s.heading,
+    items: s.items ?? (s.groups ?? []).flatMap((g) => g.items.map((i) => `${g.label} — ${i}`)),
+  }))
+}
+
+export const LLD_PREREQUISITES_LABEL = 'Learn By Code Implementation'
+export const HLD_PREREQUISITES_LABEL = 'Mostly Conceptual'
+export const LLD_PREREQUISITES_TOPIC_NAME = `LLD Prerequisites — ${LLD_PREREQUISITES_LABEL}`
+export const HLD_PREREQUISITES_TOPIC_NAME = `HLD Prerequisites — ${HLD_PREREQUISITES_LABEL}`
