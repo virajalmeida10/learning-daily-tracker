@@ -96,6 +96,25 @@ export function DailyGoals({ goals, subjects, onAdd, onToggle, onDelete, compact
   const todayGoals = (byDate.get(today) ?? []).slice().sort((a, b) => a.createdAt.localeCompare(b.createdAt))
   const streak = useMemo(() => currentStreak(byDate, today), [byDate, today])
 
+  // Group consecutive goals that share a subject + category so the label
+  // isn't repeated on every row when you add several topics under the same
+  // pick in a row (e.g. a handful of Java goals back to back).
+  const goalGroups = useMemo(() => {
+    const groups: { subjectId?: string; category?: string; goals: DailyGoal[] }[] = []
+    const indexByKey = new Map<string, number>()
+    for (const g of todayGoals) {
+      const key = `${g.subjectId ?? ''}::${g.category ?? ''}`
+      let idx = indexByKey.get(key)
+      if (idx === undefined) {
+        idx = groups.length
+        indexByKey.set(key, idx)
+        groups.push({ subjectId: g.subjectId, category: g.category, goals: [] })
+      }
+      groups[idx].goals.push(g)
+    }
+    return groups
+  }, [todayGoals])
+
   const historyDays = compact ? 0 : 35
   const history = useMemo(() => {
     if (!historyDays) return []
@@ -157,23 +176,27 @@ export function DailyGoals({ goals, subjects, onAdd, onToggle, onDelete, compact
       {todayGoals.length === 0 ? (
         <p className="py-2 text-sm text-stone-400">No goals set for today yet.</p>
       ) : (
-        <ul className="space-y-1.5">
-          {todayGoals.map((g) => (
-            <li key={g.id} className="flex items-start gap-2 rounded px-1 py-1 hover:bg-stone-50">
-              <input type="checkbox" checked={g.completed} onChange={() => onToggle(g.id)} className="mt-0.5 h-4 w-4 accent-accent-600" />
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
-                  <span className="font-medium uppercase tracking-wide text-accent-700">{subjectName(g.subjectId)}</span>
-                  {g.category && <span className="rounded bg-stone-100 px-1.5 py-0.5 text-stone-600">{g.category}</span>}
-                </div>
-                <span className={`text-sm ${g.completed ? 'text-stone-400 line-through' : 'text-stone-800'}`}>{g.text}</span>
+        <div className="space-y-3">
+          {goalGroups.map((group, i) => (
+            <div key={i}>
+              <div className="mb-1 flex flex-wrap items-center gap-1.5 text-xs text-stone-500">
+                <span className="font-medium uppercase tracking-wide text-accent-700">{subjectName(group.subjectId)}</span>
+                {group.category && <span className="rounded bg-stone-100 px-1.5 py-0.5 text-stone-600">{group.category}</span>}
               </div>
-              <button onClick={() => onDelete(g.id)} className="text-stone-300 hover:text-red-500" aria-label="Delete goal">
-                &times;
-              </button>
-            </li>
+              <ul className="space-y-1">
+                {group.goals.map((g) => (
+                  <li key={g.id} className="flex items-center gap-2 rounded px-1 py-1 hover:bg-stone-50">
+                    <input type="checkbox" checked={g.completed} onChange={() => onToggle(g.id)} className="h-4 w-4 accent-accent-600" />
+                    <span className={`flex-1 text-sm ${g.completed ? 'text-stone-400 line-through' : 'text-stone-800'}`}>{g.text}</span>
+                    <button onClick={() => onDelete(g.id)} className="text-stone-300 hover:text-red-500" aria-label="Delete goal">
+                      &times;
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
 
       {!compact && (
