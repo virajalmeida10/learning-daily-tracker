@@ -1,0 +1,61 @@
+# Learning Tracker
+
+A personal learning tracker for interview prep — built to solve one problem: you learn a topic, then forget to revise it. This app makes revision the first thing you see every time you open it, not an afterthought.
+
+Single-page app, React + TypeScript + Tailwind, no backend. All data lives in your browser's `localStorage`; back it up or move machines with JSON export/import.
+
+## Features
+
+- **Revise first** — on load, the home screen leads with everything due or overdue for revision, sorted oldest-due-first. Nothing else competes for attention above it.
+- **Spaced repetition** — each topic is scheduled at increasing intervals after you learn it: 1, 3, 7, 14, then 30 days. Marking a revision "Done" advances it to the next interval, counted from the day you actually reviewed (so a late review doesn't compound). Marking it "Struggled" resets it to the 1-day interval. After clearing the 30-day interval once, a topic "graduates" and keeps repeating every 30 days rather than dropping out of rotation.
+- **Topic capture** — subject, topic name, a list of subtopics, markdown notes (with fenced code blocks for Java/SQL/etc., syntax-highlighted), date learned, a 1–5 difficulty rating, and free-form tags.
+- **Editable subjects** — add, rename, or delete subjects at any time; deleting a subject with topics in it asks for confirmation first.
+- **Daily goals** — set today's goals before you start studying, picking a subject and (for System Design or DSA subjects) a sub-category — High-Level/Low-Level Design, or a data structure like Linked Lists or Trees — then the specific topic. Check them off through the day. A streak counter and a 35-day history grid make skipped days visible.
+- **Browse & search** — filter topics by subject, tag, difficulty, and date range; full-text search across topic names, subtopics, and notes. View any subject as a chronological list of everything covered.
+- **Local-first data** — everything is stored in `localStorage`; export the full dataset as JSON and import it back in to back up or move between devices.
+
+## Tech stack
+
+- React 18 + TypeScript
+- Vite
+- Tailwind CSS (no external UI component library — everything is hand-built)
+- `react-markdown` + `remark-gfm` + `rehype-highlight` for markdown notes with syntax-highlighted code blocks
+
+## Getting started
+
+```bash
+npm install
+npm run dev
+```
+
+Then open the printed local URL. To type-check and build for production:
+
+```bash
+npm run build
+```
+
+## Project structure
+
+```
+src/
+  types.ts              Core data types (Subject, Topic, RevisionState, DailyGoal, ...)
+  date.ts               Local-calendar-date helpers used by the scheduler
+  spacedRepetition.ts   The revision scheduling engine
+  storage.ts            localStorage persistence + JSON export/import
+  index.css             Tailwind entry + markdown/code-block styling
+  App.tsx               View state and top-level wiring
+  components/
+    Nav.tsx              Top navigation
+    RevisePanel.tsx       The "Revise first" home panel
+    TopicForm.tsx         Create/edit a topic
+    TopicDetail.tsx       View a single topic, mark it reviewed
+    TopicList.tsx         Browse/search/filter, and per-subject chronological view
+    DailyGoals.tsx        Today's goals, streak, and history grid
+    Settings.tsx          Subject management, export/import
+    Markdown.tsx          Markdown + syntax highlighting renderer
+    ui.tsx                Shared UI primitives (button, input, modal, etc.)
+```
+
+## Data & privacy
+
+Nothing leaves your browser. All topics, goals, and subjects are stored in `localStorage` under a single key. Use **Settings → Export JSON** to back up, and **Import JSON** to restore (this replaces the current data on that device).
