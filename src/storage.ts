@@ -1,7 +1,10 @@
-import type { AppData, ExportData } from './types'
+import type { AppData, ExportData, Topic } from './types'
 import { todayISO } from './date'
+import { createInitialRevisionState } from './spacedRepetition'
+import { HLD_PREREQUISITES, LLD_PREREQUISITES, prereqNotes, prereqSubtopicTexts } from './prerequisiteContent'
 
 const STORAGE_KEY = 'learning-tracker:data:v1'
+const PREREQ_SEED_KEY = 'learning-tracker:seeded-prereqs:v1'
 
 export function newId(): string {
   return crypto.randomUUID()
@@ -67,14 +70,56 @@ function migrateSubtopics(data: AppData): AppData {
   return changed ? { ...data, topics } : data
 }
 
+function makePrereqTopic(subjectId: string, name: string, tags: string[]): Topic {
+  const sections = name === 'LLD Prerequisites' ? LLD_PREREQUISITES : HLD_PREREQUISITES
+  const now = new Date().toISOString()
+  const dateLearned = todayISO()
+  return {
+    id: newId(),
+    subjectId,
+    name,
+    subtopics: prereqSubtopicTexts(sections).map((text) => ({ id: newId(), text, completed: false })),
+    notes: prereqNotes(sections),
+    dateLearned,
+    difficulty: 3,
+    tags,
+    revision: createInitialRevisionState(dateLearned),
+    createdAt: now,
+    updatedAt: now,
+  }
+}
+
+// One-time seed of "LLD Prerequisites" / "HLD Prerequisites" topics under
+// System Design. Guarded by a separate localStorage flag (not by whether
+// the topics currently exist) so that if the user later deletes either
+// topic, it stays deleted rather than reappearing on the next load.
+function seedPrerequisiteTopics(data: AppData): AppData {
+  if (typeof localStorage === 'undefined' || localStorage.getItem(PREREQ_SEED_KEY)) return data
+  localStorage.setItem(PREREQ_SEED_KEY, 'true')
+
+  let subjects = data.subjects
+  let systemDesign = subjects.find((s) => s.name.trim().toLowerCase() === 'system design')
+  if (!systemDesign) {
+    systemDesign = { id: newId(), name: 'System Design', createdAt: new Date().toISOString() }
+    subjects = [...subjects, systemDesign]
+  }
+
+  const newTopics = [
+    makePrereqTopic(systemDesign.id, 'LLD Prerequisites', ['prerequisites', 'lld']),
+    makePrereqTopic(systemDesign.id, 'HLD Prerequisites', ['prerequisites', 'hld']),
+  ]
+
+  return { ...data, subjects, topics: [...data.topics, ...newTopics] }
+}
+
 export function migrateData(data: AppData): AppData {
-  return migrateSubtopics(migrateSeedSubjects(data))
+  return seedPrerequisiteTopics(migrateSubtopics(migrateSeedSubjects(data)))
 }
 
 export function loadData(): AppData {
   const raw = localStorage.getItem(STORAGE_KEY)
   if (!raw) {
-    const seeded = seedData()
+    const seeded = migrateData(seedData())
     saveData(seeded)
     return seeded
   }
@@ -85,7 +130,7 @@ export function loadData(): AppData {
     if (migrated !== parsed) saveData(migrated)
     return migrated
   } catch {
-    const seeded = seedData()
+    const seeded = migrateData(seedData())
     saveData(seeded)
     return seeded
   }
