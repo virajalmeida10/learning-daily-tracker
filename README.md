@@ -11,6 +11,7 @@ Single-page app, React + TypeScript + Tailwind, no backend. All data lives in yo
 - **Revise first** — on load, the home screen leads with everything due or overdue for revision, sorted oldest-due-first. Nothing else competes for attention above it.
 - **Spaced repetition** — each topic is scheduled at increasing intervals after you learn it: 1, 3, 7, 14, then 30 days. Marking a revision "Done" advances it to the next interval, counted from the day you actually reviewed (so a late review doesn't compound). Marking it "Struggled" resets it to the 1-day interval. After clearing the 30-day interval once, a topic "graduates" and keeps repeating every 30 days rather than dropping out of rotation.
 - **Topic capture** — subject, topic name, a list of subtopics, markdown notes (with fenced code blocks for Java/SQL/etc., syntax-highlighted), date learned, a 1–5 difficulty rating, and free-form tags.
+- **Subtopic checklist** — each subtopic can be checked off individually, from the topic itself or from the dedicated **Checklist** tab, which lists every topic with pending subtopics first and fully-completed topics below — so you can see at a glance what's done for the day and what to pick up tomorrow.
 - **Editable subjects** — add, rename, or delete subjects at any time; deleting a subject with topics in it asks for confirmation first.
 - **Daily goals** — set today's goals before you start studying, picking a subject and, where relevant, a sub-category: High-Level/Low-Level Design for System Design, a data structure like Linked Lists or Trees for Data Structures & Algorithms, or Computer Networks/Operating Systems/Database Management Systems for SWE Fundamentals — then the specific topic. Check them off through the day. A streak counter and a 35-day history grid make skipped days visible.
 - **Default subjects** — ships with Java, Spring Boot, Data Structures & Algorithms, SWE Fundamentals, and System Design, all editable like any other subject.
@@ -51,8 +52,9 @@ src/
     Nav.tsx              Top navigation
     RevisePanel.tsx       The "Revise first" home panel
     TopicForm.tsx         Create/edit a topic
-    TopicDetail.tsx       View a single topic, mark it reviewed
+    TopicDetail.tsx       View a single topic, mark it reviewed, check off subtopics
     TopicList.tsx         Browse/search/filter, and per-subject chronological view
+    Checklist.tsx         Cross-topic subtopic checklist (pending vs completed)
     DailyGoals.tsx        Today's goals, streak, and history grid
     Settings.tsx          Subject management, export/import
     Markdown.tsx          Markdown + syntax highlighting renderer

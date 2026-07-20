@@ -20,11 +20,17 @@ export interface RevisionState {
   history: RevisionHistoryEntry[]
 }
 
+export interface Subtopic {
+  id: string
+  text: string
+  completed: boolean
+}
+
 export interface Topic {
   id: string
   subjectId: string
   name: string
-  subtopics: string[]
+  subtopics: Subtopic[]
   notes: string // markdown, may contain fenced code blocks
   dateLearned: string // YYYY-MM-DD
   difficulty: 1 | 2 | 3 | 4 | 5

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import type { AppData, DailyGoal, Topic } from './types'
-import { loadData, newId, saveData } from './storage'
+import { loadData, migrateData, newId, saveData } from './storage'
 import { applyCompleted, applyStruggled } from './spacedRepetition'
 import { todayISO } from './date'
 import { Nav, type View } from './components/Nav'
@@ -9,6 +9,7 @@ import { DailyGoals } from './components/DailyGoals'
 import { TopicForm } from './components/TopicForm'
 import { TopicList } from './components/TopicList'
 import { TopicDetail } from './components/TopicDetail'
+import { Checklist } from './components/Checklist'
 import { Settings } from './components/Settings'
 import { Card, Modal } from './components/ui'
 
@@ -40,6 +41,21 @@ export default function App() {
     setFormOpen(false)
     setFormInitial(undefined)
     setSelectedTopicId(topic.id)
+  }
+
+  const toggleSubtopic = (topicId: string, subtopicId: string) => {
+    setData((d) => ({
+      ...d,
+      topics: d.topics.map((t) =>
+        t.id === topicId
+          ? {
+              ...t,
+              subtopics: t.subtopics.map((s) => (s.id === subtopicId ? { ...s, completed: !s.completed } : s)),
+              updatedAt: new Date().toISOString(),
+            }
+          : t,
+      ),
+    }))
   }
 
   const deleteTopic = (id: string) => {
@@ -102,6 +118,7 @@ export default function App() {
         onDelete={() => deleteTopic(selectedTopic.id)}
         onComplete={() => reviseTopic(selectedTopic.id, 'completed')}
         onStruggled={() => reviseTopic(selectedTopic.id, 'struggled')}
+        onToggleSubtopic={(subtopicId) => toggleSubtopic(selectedTopic.id, subtopicId)}
         onBack={() => {
           closeTopic()
           setView(detailOrigin === 'home' ? 'home' : detailOrigin)
@@ -163,6 +180,8 @@ export default function App() {
         </ul>
       )
     }
+  } else if (view === 'checklist') {
+    body = <Checklist topics={data.topics} subjects={data.subjects} onToggleSubtopic={toggleSubtopic} />
   } else if (view === 'goals') {
     body = <DailyGoals goals={data.dailyGoals} subjects={data.subjects} onAdd={addGoal} onToggle={toggleGoal} onDelete={deleteGoal} />
   } else {
@@ -174,7 +193,7 @@ export default function App() {
         onAddSubject={addSubject}
         onRenameSubject={renameSubject}
         onDeleteSubject={deleteSubject}
-        onImport={(imported) => setData(imported)}
+        onImport={(imported) => setData(migrateData(imported))}
       />
     )
   }

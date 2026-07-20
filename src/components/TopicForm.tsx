@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { Subject, Topic } from '../types'
+import type { Subject, Subtopic, Topic } from '../types'
 import { todayISO } from '../date'
 import { createInitialRevisionState } from '../spacedRepetition'
 import { newId } from '../storage'
@@ -48,10 +48,56 @@ function ListEditor({ label, items, onChange, placeholder }: { label: string; it
   )
 }
 
+function SubtopicEditor({ items, onChange }: { items: Subtopic[]; onChange: (items: Subtopic[]) => void }) {
+  const [draft, setDraft] = useState('')
+
+  const commit = () => {
+    const v = draft.trim()
+    if (v) onChange([...items, { id: newId(), text: v, completed: false }])
+    setDraft('')
+  }
+
+  return (
+    <div>
+      <Label>Subtopics</Label>
+      {items.length > 0 && (
+        <ul className="mb-1.5 space-y-1">
+          {items.map((item) => (
+            <li key={item.id} className="flex items-center gap-2 rounded border border-stone-200 px-2 py-1">
+              <input
+                type="checkbox"
+                checked={item.completed}
+                onChange={() => onChange(items.map((i) => (i.id === item.id ? { ...i, completed: !i.completed } : i)))}
+                className="h-4 w-4 accent-accent-600"
+              />
+              <span className={`flex-1 text-sm ${item.completed ? 'text-stone-400 line-through' : 'text-stone-800'}`}>{item.text}</span>
+              <button type="button" onClick={() => onChange(items.filter((i) => i.id !== item.id))} className="text-stone-300 hover:text-red-500" aria-label="Remove subtopic">
+                &times;
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <Input
+        value={draft}
+        placeholder="Add a subtopic, press Enter"
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault()
+            commit()
+          }
+        }}
+        onBlur={commit}
+      />
+    </div>
+  )
+}
+
 export function TopicForm({ subjects, initial, onSave, onCancel }: Props) {
   const [subjectId, setSubjectId] = useState(initial?.subjectId ?? subjects[0]?.id ?? '')
   const [name, setName] = useState(initial?.name ?? '')
-  const [subtopics, setSubtopics] = useState<string[]>(initial?.subtopics ?? [])
+  const [subtopics, setSubtopics] = useState<Subtopic[]>(initial?.subtopics ?? [])
   const [notes, setNotes] = useState(initial?.notes ?? '')
   const [dateLearned, setDateLearned] = useState(initial?.dateLearned ?? todayISO())
   const [difficulty, setDifficulty] = useState<1 | 2 | 3 | 4 | 5>(initial?.difficulty ?? 3)
@@ -112,7 +158,7 @@ export function TopicForm({ subjects, initial, onSave, onCancel }: Props) {
         <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Binary search on rotated array" />
       </div>
 
-      <ListEditor label="Subtopics" items={subtopics} onChange={setSubtopics} placeholder="Add a subtopic, press Enter" />
+      <SubtopicEditor items={subtopics} onChange={setSubtopics} />
 
       <div>
         <div className="mb-1 flex items-center justify-between">

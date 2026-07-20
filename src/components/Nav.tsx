@@ -1,10 +1,11 @@
-export type View = 'home' | 'log' | 'browse' | 'subjects' | 'goals' | 'settings'
+export type View = 'home' | 'log' | 'browse' | 'subjects' | 'checklist' | 'goals' | 'settings'
 
 const ITEMS: { key: View; label: string }[] = [
   { key: 'home', label: 'Home' },
   { key: 'log', label: 'Log topic' },
   { key: 'browse', label: 'Browse' },
   { key: 'subjects', label: 'Subjects' },
+  { key: 'checklist', label: 'Checklist' },
   { key: 'goals', label: 'Goals' },
   { key: 'settings', label: 'Settings' },
 ]

@@ -51,6 +51,26 @@ function migrateSeedSubjects(data: AppData): AppData {
   return changed ? { ...data, subjects } : data
 }
 
+// Older versions stored each topic's subtopics as plain strings with no
+// completion state. Upgrade them in place to { id, text, completed } so
+// existing topics work with the subtopic checklist.
+function migrateSubtopics(data: AppData): AppData {
+  let changed = false
+  const topics = data.topics.map((t) => {
+    const subtopics = t.subtopics as unknown[]
+    if (subtopics.length > 0 && typeof subtopics[0] === 'string') {
+      changed = true
+      return { ...t, subtopics: (subtopics as string[]).map((text) => ({ id: newId(), text, completed: false })) }
+    }
+    return t
+  })
+  return changed ? { ...data, topics } : data
+}
+
+export function migrateData(data: AppData): AppData {
+  return migrateSubtopics(migrateSeedSubjects(data))
+}
+
 export function loadData(): AppData {
   const raw = localStorage.getItem(STORAGE_KEY)
   if (!raw) {
@@ -61,7 +81,7 @@ export function loadData(): AppData {
   try {
     const parsed = JSON.parse(raw) as AppData
     if (!parsed.subjects || !parsed.topics || !parsed.dailyGoals) throw new Error('malformed data')
-    const migrated = migrateSeedSubjects(parsed)
+    const migrated = migrateData(parsed)
     if (migrated !== parsed) saveData(migrated)
     return migrated
   } catch {

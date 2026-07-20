@@ -33,7 +33,7 @@ export function TopicList({ topics, subjects, onOpen, fixedSubjectId }: Props) {
       .filter((t) => !to || t.dateLearned <= to)
       .filter((t) => {
         if (!q) return true
-        const haystack = `${t.name} ${t.subtopics.join(' ')} ${t.notes}`.toLowerCase()
+        const haystack = `${t.name} ${t.subtopics.map((s) => s.text).join(' ')} ${t.notes}`.toLowerCase()
         return haystack.includes(q)
       })
       .sort((a, b) => (fixedSubjectId ? a.dateLearned.localeCompare(b.dateLearned) : b.dateLearned.localeCompare(a.dateLearned)))
