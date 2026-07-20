@@ -29,11 +29,14 @@ const DATA_STRUCTURES = [
 
 const SYSTEM_DESIGN_LEVELS = ['High-Level Design (HLD)', 'Low-Level Design (LLD)']
 
+const SWE_FUNDAMENTALS_TOPICS = ['Computer Networks', 'Operating Systems', 'Database Management Systems']
+
 function categoryOptionsFor(subjectName: string | undefined): string[] | null {
   if (!subjectName) return null
   const n = subjectName.toLowerCase()
   if (n.includes('system design')) return SYSTEM_DESIGN_LEVELS
   if (n.includes('dsa') || n.includes('data structure')) return DATA_STRUCTURES
+  if (n.includes('fundamentals')) return SWE_FUNDAMENTALS_TOPICS
   return null
 }
 

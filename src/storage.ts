@@ -10,11 +10,45 @@ export function newId(): string {
 function seedData(): AppData {
   const now = new Date().toISOString()
   const subjects = [
-    { id: newId(), name: 'Java / Spring Boot', createdAt: now },
-    { id: newId(), name: 'Java DSA', createdAt: now },
+    { id: newId(), name: 'Java', createdAt: now },
+    { id: newId(), name: 'Spring Boot', createdAt: now },
+    { id: newId(), name: 'Data Structures & Algorithms', createdAt: now },
     { id: newId(), name: 'SWE Fundamentals', createdAt: now },
+    { id: newId(), name: 'System Design', createdAt: now },
   ]
   return { version: 1, subjects, topics: [], dailyGoals: [] }
+}
+
+// One-time fixups for subjects seeded by earlier versions of this app, so
+// existing users' data lines up with the current default subject set
+// (Java/Spring Boot split apart, DSA renamed, System Design added) without
+// losing any topics already logged against those subjects.
+function migrateSeedSubjects(data: AppData): AppData {
+  let subjects = data.subjects
+  let changed = false
+  const byName = (name: string) => subjects.find((s) => s.name.trim().toLowerCase() === name)
+
+  const combined = byName('java / spring boot')
+  if (combined) {
+    changed = true
+    subjects = subjects.map((s) => (s.id === combined.id ? { ...s, name: 'Java' } : s))
+    if (!subjects.some((s) => s.name.trim().toLowerCase() === 'spring boot')) {
+      subjects = [...subjects, { id: newId(), name: 'Spring Boot', createdAt: new Date().toISOString() }]
+    }
+  }
+
+  const dsa = byName('java dsa')
+  if (dsa) {
+    changed = true
+    subjects = subjects.map((s) => (s.id === dsa.id ? { ...s, name: 'Data Structures & Algorithms' } : s))
+  }
+
+  if (!subjects.some((s) => s.name.trim().toLowerCase() === 'system design')) {
+    changed = true
+    subjects = [...subjects, { id: newId(), name: 'System Design', createdAt: new Date().toISOString() }]
+  }
+
+  return changed ? { ...data, subjects } : data
 }
 
 export function loadData(): AppData {
@@ -27,7 +61,9 @@ export function loadData(): AppData {
   try {
     const parsed = JSON.parse(raw) as AppData
     if (!parsed.subjects || !parsed.topics || !parsed.dailyGoals) throw new Error('malformed data')
-    return parsed
+    const migrated = migrateSeedSubjects(parsed)
+    if (migrated !== parsed) saveData(migrated)
+    return migrated
   } catch {
     const seeded = seedData()
     saveData(seeded)
