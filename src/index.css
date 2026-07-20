@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Minimal markdown content styling: no library needed for this small a surface. */
+.prose-notes p {
+  margin: 0.5em 0;
+}
+.prose-notes h1,
+.prose-notes h2,
+.prose-notes h3 {
+  font-weight: 600;
+  margin: 1em 0 0.4em;
+}
+.prose-notes h1 {
+  font-size: 1.15em;
+}
+.prose-notes h2 {
+  font-size: 1.05em;
+}
+.prose-notes h3 {
+  font-size: 1em;
+}
+.prose-notes ul,
+.prose-notes ol {
+  margin: 0.4em 0 0.4em 1.25em;
+}
+.prose-notes ul {
+  list-style: disc;
+}
+.prose-notes ol {
+  list-style: decimal;
+}
+.prose-notes blockquote {
+  border-left: 2px solid theme('colors.stone.300');
+  padding-left: 0.75em;
+  color: theme('colors.stone.500');
+  margin: 0.5em 0;
+}
+.prose-notes a {
+  color: theme('colors.accent.600');
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.prose-notes table {
+  border-collapse: collapse;
+  margin: 0.5em 0;
+  font-size: 0.9em;
+}
+.prose-notes th,
+.prose-notes td {
+  border: 1px solid theme('colors.stone.200');
+  padding: 0.3em 0.6em;
+  text-align: left;
+}
+.prose-notes code {
+  font-family: theme('fontFamily.mono');
+  font-size: 0.85em;
+  background: theme('colors.stone.100');
+  border-radius: 3px;
+  padding: 0.1em 0.35em;
+}
+.prose-notes pre {
+  background: theme('colors.stone.50');
+  border: 1px solid theme('colors.stone.200');
+  border-radius: 6px;
+  padding: 0.75em 1em;
+  overflow-x: auto;
+  margin: 0.6em 0;
+}
+.prose-notes pre code {
+  background: none;
+  padding: 0;
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+
+/* Restrained, neutral syntax highlighting palette instead of a stock
+   multicolour hljs theme, so code blocks stay in step with the rest of
+   the app's design. */
+.hljs-keyword,
+.hljs-built_in,
+.hljs-selector-tag {
+  color: theme('colors.accent.700');
+  font-weight: 600;
+}
+.hljs-string,
+.hljs-attr {
+  color: #0f766e;
+}
+.hljs-comment,
+.hljs-quote {
+  color: theme('colors.stone.400');
+  font-style: italic;
+}
+.hljs-number,
+.hljs-literal {
+  color: #b45309;
+}
+.hljs-title,
+.hljs-title.function_,
+.hljs-title.class_ {
+  color: theme('colors.stone.900');
+  font-weight: 600;
+}
+.hljs-type {
+  color: theme('colors.accent.700');
+}
