@@ -4,6 +4,8 @@ A personal learning tracker for interview prep — built to solve one problem: y
 
 Single-page app, React + TypeScript + Tailwind, no backend. All data lives in your browser's `localStorage`; back it up or move machines with JSON export/import.
 
+**Live app:** [learning-daily-tracker.vercel.app](https://learning-daily-tracker.vercel.app/)
+
 ## Features
 
 - **Revise first** — on load, the home screen leads with everything due or overdue for revision, sorted oldest-due-first. Nothing else competes for attention above it.
