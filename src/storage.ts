@@ -1,17 +1,21 @@
 import type { AppData, ExportData, Topic } from './types'
-import { todayISO } from './date'
+import { addDays, todayISO } from './date'
 import { createInitialRevisionState } from './spacedRepetition'
 import {
   HLD_PREREQUISITES,
   HLD_PREREQUISITES_TOPIC_NAME,
+  JAVA_FOUNDATIONS,
+  JAVA_FOUNDATIONS_TOPIC_NAME,
   LLD_PREREQUISITES,
   LLD_PREREQUISITES_TOPIC_NAME,
   prereqNotes,
   prereqSubtopicSeeds,
+  type PrereqSection,
 } from './prerequisiteContent'
 
 const STORAGE_KEY = 'learning-tracker:data:v1'
 const PREREQ_SEED_KEY = 'learning-tracker:seeded-prereqs:v1'
+const JAVA_FOUNDATIONS_SEED_KEY = 'learning-tracker:seeded-java-foundations:v1'
 
 export function newId(): string {
   return crypto.randomUUID()
@@ -77,11 +81,12 @@ function migrateSubtopics(data: AppData): AppData {
   return changed ? { ...data, topics } : data
 }
 
-function makePrereqTopic(subjectId: string, kind: 'lld' | 'hld', tags: string[]): Topic {
-  const sections = kind === 'lld' ? LLD_PREREQUISITES : HLD_PREREQUISITES
-  const name = kind === 'lld' ? LLD_PREREQUISITES_TOPIC_NAME : HLD_PREREQUISITES_TOPIC_NAME
+// A topic whose subtopics are the section headings and whose children are
+// every item under each heading — all checkable, nothing left as static
+// unmarkable text. Notes are left empty on purpose: the checklist itself
+// is the content, so nothing is duplicated below it.
+function makeChecklistTopic(subjectId: string, name: string, sections: PrereqSection[], tags: string[], dateLearned: string): Topic {
   const now = new Date().toISOString()
-  const dateLearned = todayISO()
   return {
     id: newId(),
     subjectId,
@@ -92,7 +97,7 @@ function makePrereqTopic(subjectId: string, kind: 'lld' | 'hld', tags: string[])
       completed: false,
       children: s.items.map((text) => ({ id: newId(), text, completed: false })),
     })),
-    notes: prereqNotes(sections),
+    notes: '',
     dateLearned,
     difficulty: 3,
     tags,
@@ -100,6 +105,13 @@ function makePrereqTopic(subjectId: string, kind: 'lld' | 'hld', tags: string[])
     createdAt: now,
     updatedAt: now,
   }
+}
+
+function findOrCreateSubject(subjects: AppData['subjects'], name: string) {
+  const existing = subjects.find((s) => s.name.trim().toLowerCase() === name.toLowerCase())
+  if (existing) return { subjects, subject: existing }
+  const created = { id: newId(), name, createdAt: new Date().toISOString() }
+  return { subjects: [...subjects, created], subject: created }
 }
 
 // One-time seed of "LLD Prerequisites" / "HLD Prerequisites" topics under
@@ -110,53 +122,75 @@ function seedPrerequisiteTopics(data: AppData): AppData {
   if (typeof localStorage === 'undefined' || localStorage.getItem(PREREQ_SEED_KEY)) return data
   localStorage.setItem(PREREQ_SEED_KEY, 'true')
 
-  let subjects = data.subjects
-  let systemDesign = subjects.find((s) => s.name.trim().toLowerCase() === 'system design')
-  if (!systemDesign) {
-    systemDesign = { id: newId(), name: 'System Design', createdAt: new Date().toISOString() }
-    subjects = [...subjects, systemDesign]
-  }
-
+  const { subjects, subject: systemDesign } = findOrCreateSubject(data.subjects, 'System Design')
+  const dateLearned = todayISO()
   const newTopics = [
-    makePrereqTopic(systemDesign.id, 'lld', ['prerequisites', 'lld']),
-    makePrereqTopic(systemDesign.id, 'hld', ['prerequisites', 'hld']),
+    makeChecklistTopic(systemDesign.id, LLD_PREREQUISITES_TOPIC_NAME, LLD_PREREQUISITES, ['prerequisites', 'lld'], dateLearned),
+    makeChecklistTopic(systemDesign.id, HLD_PREREQUISITES_TOPIC_NAME, HLD_PREREQUISITES, ['prerequisites', 'hld'], dateLearned),
   ]
 
   return { ...data, subjects, topics: [...data.topics, ...newTopics] }
 }
 
+// One-time seed of the "Java foundations" topic, positioned to sort before
+// the LLD/HLD prerequisites (one day earlier) in the System Design subject's
+// chronological view. Own flag, independent of the prerequisites seed above,
+// so it still runs for users who already had that one seeded before this
+// topic existed.
+function seedJavaFoundationsTopic(data: AppData): AppData {
+  if (typeof localStorage === 'undefined' || localStorage.getItem(JAVA_FOUNDATIONS_SEED_KEY)) return data
+  localStorage.setItem(JAVA_FOUNDATIONS_SEED_KEY, 'true')
+
+  const { subjects, subject: systemDesign } = findOrCreateSubject(data.subjects, 'System Design')
+  const dateLearned = addDays(todayISO(), -1)
+  const topic = makeChecklistTopic(systemDesign.id, JAVA_FOUNDATIONS_TOPIC_NAME, JAVA_FOUNDATIONS, ['prerequisites', 'java'], dateLearned)
+
+  return { ...data, subjects, topics: [...data.topics, topic] }
+}
+
 // Upgrades prerequisite topics seeded by an earlier version of this app:
 // renames them to include the "Learn By Code Implementation" / "Mostly
-// Conceptual" suffix, and backfills checkable child items under each
-// subtopic heading (a child's initial completed state mirrors whatever
-// its parent subtopic was already marked as, so nothing looks like it
-// regressed). Matches on the old exact name, so it naturally becomes a
-// no-op once a topic has been renamed — and leaves alone anything the
-// user has since renamed themselves.
+// Conceptual" suffix, backfills checkable child items under each subtopic
+// heading (a child's initial completed state mirrors whatever its parent
+// subtopic was already marked as, so nothing looks like it regressed), and
+// clears the notes field if it still holds the original auto-generated
+// text (now redundant with the checklist) — but leaves notes alone if the
+// user has since edited them.
 function migratePrereqTopics(data: AppData): AppData {
   let changed = false
   const topics = data.topics.map((t) => {
-    const kind = t.name.trim() === 'LLD Prerequisites' ? 'lld' : t.name.trim() === 'HLD Prerequisites' ? 'hld' : null
+    const name = t.name.trim()
+    const kind =
+      name === 'LLD Prerequisites' || name === LLD_PREREQUISITES_TOPIC_NAME
+        ? 'lld'
+        : name === 'HLD Prerequisites' || name === HLD_PREREQUISITES_TOPIC_NAME
+          ? 'hld'
+          : null
     if (!kind) return t
-    changed = true
     const sections = kind === 'lld' ? LLD_PREREQUISITES : HLD_PREREQUISITES
+    const targetName = kind === 'lld' ? LLD_PREREQUISITES_TOPIC_NAME : HLD_PREREQUISITES_TOPIC_NAME
     const seedByHeading = new Map(prereqSubtopicSeeds(sections).map((s) => [s.heading, s.items]))
-    return {
-      ...t,
-      name: kind === 'lld' ? LLD_PREREQUISITES_TOPIC_NAME : HLD_PREREQUISITES_TOPIC_NAME,
-      subtopics: t.subtopics.map((sub) => {
-        if (sub.children && sub.children.length > 0) return sub
-        const items = seedByHeading.get(sub.text)
-        if (!items) return sub
-        return { ...sub, children: items.map((text) => ({ id: newId(), text, completed: sub.completed })) }
-      }),
-    }
+
+    let subtopicsChanged = false
+    const nextSubtopics = t.subtopics.map((sub) => {
+      if (sub.children && sub.children.length > 0) return sub
+      const items = seedByHeading.get(sub.text)
+      if (!items) return sub
+      subtopicsChanged = true
+      return { ...sub, children: items.map((text) => ({ id: newId(), text, completed: sub.completed })) }
+    })
+    const notesChanged = t.notes !== '' && t.notes === prereqNotes(sections)
+    const nameChanged = t.name !== targetName
+
+    if (!nameChanged && !subtopicsChanged && !notesChanged) return t
+    changed = true
+    return { ...t, name: targetName, subtopics: subtopicsChanged ? nextSubtopics : t.subtopics, notes: notesChanged ? '' : t.notes }
   })
   return changed ? { ...data, topics } : data
 }
 
 export function migrateData(data: AppData): AppData {
-  return seedPrerequisiteTopics(migratePrereqTopics(migrateSubtopics(migrateSeedSubjects(data))))
+  return seedJavaFoundationsTopic(seedPrerequisiteTopics(migratePrereqTopics(migrateSubtopics(migrateSeedSubjects(data)))))
 }
 
 export function loadData(): AppData {

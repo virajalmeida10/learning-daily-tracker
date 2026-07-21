@@ -407,10 +407,6 @@ export function prereqNotes(sections: PrereqSection[]): string {
     .join('\n\n')
 }
 
-export function prereqSubtopicTexts(sections: PrereqSection[]): string[] {
-  return sections.map((s) => s.heading)
-}
-
 // Flattened { heading, items } per section, for building the checkable
 // child items under each subtopic. Grouped sections (Design Patterns) get
 // their group label prefixed onto each item so the grouping isn't lost
@@ -426,3 +422,174 @@ export const LLD_PREREQUISITES_LABEL = 'Learn By Code Implementation'
 export const HLD_PREREQUISITES_LABEL = 'Mostly Conceptual'
 export const LLD_PREREQUISITES_TOPIC_NAME = `LLD Prerequisites — ${LLD_PREREQUISITES_LABEL}`
 export const HLD_PREREQUISITES_TOPIC_NAME = `HLD Prerequisites — ${HLD_PREREQUISITES_LABEL}`
+
+export const JAVA_FOUNDATIONS_TOPIC_NAME = 'Java foundations — before any of the LLD'
+
+export const JAVA_FOUNDATIONS: PrereqSection[] = [
+  {
+    heading: '1. Language basics',
+    items: [
+      'Primitives vs reference types, wrapper classes, autoboxing/unboxing',
+      'Variable scope, final, type casting (widening/narrowing)',
+      'Operators, precedence, ternary, bitwise operators',
+      'Control flow: if/else, switch (classic and expression form), loops, break/continue, labeled breaks',
+      'Arrays: 1D, 2D, initialization, Arrays utility methods',
+      'Strings: immutability, string pool, StringBuilder vs StringBuffer, common methods, String.format',
+      'Varargs',
+      'Ternary and short-circuit evaluation',
+    ],
+  },
+  {
+    heading: '2. Classes and objects',
+    items: [
+      'Class declaration, fields, methods, constructors',
+      'Constructor overloading and chaining (this(), super())',
+      'Method overloading vs overriding',
+      'this and super keywords',
+      'Access modifiers: private, default, protected, public',
+      'static fields, methods, blocks; when static is appropriate',
+      'Instance initializer blocks',
+      'Getters/setters and encapsulation',
+      'Nested classes: static nested, inner, local, anonymous',
+      'Object lifecycle, garbage collection basics',
+      'Pass-by-value semantics (Java is always pass-by-value — understand what that means for objects)',
+    ],
+  },
+  {
+    heading: '3. Inheritance and polymorphism',
+    items: [
+      'extends, single inheritance, Object as root',
+      'Method overriding rules, @Override, covariant return types',
+      'Dynamic method dispatch / runtime polymorphism',
+      'Abstract classes and abstract methods',
+      'Interfaces: implementation, multiple interfaces, default methods, static methods, private methods',
+      'instanceof and pattern matching for instanceof',
+      'Upcasting and downcasting, ClassCastException',
+      'final classes and methods',
+    ],
+  },
+  {
+    heading: '4. Object class methods',
+    items: [
+      'equals() and hashCode() — the contract and how to implement both correctly',
+      'toString()',
+      'getClass()',
+      'clone() and shallow vs deep copy (awareness level)',
+    ],
+  },
+  {
+    heading: '5. Exception handling',
+    items: [
+      'Exception hierarchy: Throwable, Error, Exception, RuntimeException',
+      'Checked vs unchecked',
+      'try/catch/finally, multi-catch',
+      'throw vs throws',
+      'Try-with-resources and AutoCloseable',
+      'Custom exceptions',
+      'Stack traces — reading them',
+    ],
+  },
+  {
+    heading: '6. Packages and structure',
+    items: [
+      'Package declaration, imports, static imports',
+      'Classpath basics',
+      'Project layout conventions (src/main/java)',
+      'Build tools: Maven or Gradle — dependencies, lifecycle, pom.xml structure',
+    ],
+  },
+  {
+    heading: '7. Java 8+ features',
+    items: [
+      'Lambda expressions and syntax',
+      'Functional interfaces: Function, BiFunction, Supplier, Consumer, Predicate, UnaryOperator',
+      '@FunctionalInterface',
+      'Method references (static, instance, constructor)',
+      'Streams: creation, intermediate ops (map, filter, sorted, distinct, limit, flatMap), terminal ops (collect, forEach, reduce, count, anyMatch)',
+      'Collectors: toList, toSet, toMap, groupingBy, partitioningBy, joining, counting',
+      'Optional: creation, map, filter, orElse, orElseGet, orElseThrow, ifPresent',
+      'Default and static interface methods',
+      'New date/time API: LocalDate, LocalDateTime, Duration, Period, DateTimeFormatter',
+    ],
+  },
+  {
+    heading: '8. Modern Java (11–21)',
+    items: [
+      'var for local type inference',
+      'Records',
+      'Text blocks',
+      'Switch expressions and pattern matching',
+      'Sealed classes and interfaces',
+      'Enhanced instanceof',
+    ],
+  },
+  {
+    heading: '9. Enums',
+    items: [
+      'Basic enums, values(), valueOf(), ordinal(), name()',
+      'Enums with fields, constructors, and methods',
+      'Enums with abstract methods (constant-specific behavior)',
+      'EnumMap, EnumSet',
+      'Enums in switch statements',
+    ],
+  },
+  {
+    heading: '10. Collections (working knowledge, before internals)',
+    items: [
+      'Collection hierarchy overview',
+      'List, Set, Map, Queue, Deque interfaces and common implementations',
+      'Iteration: for-each, Iterator, forEach with lambda',
+      'Comparable vs Comparator, sorting collections',
+      'Collections utility methods',
+      'Arrays.asList, List.of, immutable collections',
+    ],
+  },
+  {
+    heading: '11. Generics (basic level)',
+    items: [
+      'Generic classes and methods',
+      'Type parameters and naming conventions',
+      'Why generics exist — type safety and eliminating casts',
+      'Raw types and why to avoid them',
+    ],
+  },
+  {
+    heading: '12. I/O basics',
+    items: [
+      'File, reading and writing text files',
+      'BufferedReader/BufferedWriter, Scanner',
+      'Files and Paths (NIO)',
+      'Try-with-resources for streams',
+      'Serialization concepts (awareness)',
+    ],
+  },
+  {
+    heading: '13. Threads (bare minimum before concurrency deep dive)',
+    items: [
+      'What a thread is, Thread class, Runnable',
+      'start() vs run()',
+      'sleep(), join()',
+      'Basic understanding that shared mutable state is dangerous',
+    ],
+  },
+  {
+    heading: '14. Tooling and practice',
+    items: [
+      'IDE proficiency: IntelliJ — debugger, breakpoints, step through, evaluate expression',
+      'Reading Javadoc',
+      'JUnit 5 basics: @Test, assertions, @BeforeEach',
+      'Git fundamentals',
+      'Compiling and running from CLI (javac, java)',
+      'JVM/JRE/JDK distinction, bytecode, classloading (conceptual)',
+    ],
+  },
+  {
+    heading: '15. Basic DSA in Java',
+    items: [
+      'Big-O notation',
+      'Arrays, strings, HashMap, ArrayList problems',
+      'Recursion basics',
+      'Enough to write clean code without stumbling on data structure choice',
+    ],
+  },
+]
